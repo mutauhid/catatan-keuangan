@@ -5,13 +5,21 @@ const twilio = require("twilio");
 async function handleIncomingMessage(req, res) {
   const incomingMessage = req.body.Body;
   const twiml = new twilio.twiml.MessagingResponse();
+  const now = new Date();
+  const monthName = now.toLocaleString("id-ID", { month: "long" });
+  const year = now.getFullYear();
+  const sheetName = `${monthName} - ${year}`;
+  console.log("🚀 ~ handleIncomingMessage ~ sheetName:", sheetName);
 
   let replyMessage = "";
 
   try {
     const transactionData = parser.parseMessage(incomingMessage);
     if (transactionData) {
-      await transactionModel.appendTransactionToSheet(transactionData);
+      await transactionModel.appendTransactionToSheet(
+        transactionData,
+        sheetName
+      );
       replyMessage = `✅ Dicatat: **${
         transactionData.description
       }** Rp${transactionData.amount.toLocaleString("id-ID")} (via ${
