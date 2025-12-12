@@ -78,15 +78,12 @@ function parseMessage(text) {
   }
 
   let description = remainingText;
-  if (type === "Pendapatan") {
-    const incomePattern = new RegExp(`(${incomeKeywords.join("|")})`, "i");
-    console.log("🚀 ~ parseMessage ~ incomePattern:", incomePattern);
-    description = remainingText.replace(incomePattern, "").trim();
-    console.log("🚀 ~ parseMessage ~ description:", description);
-  }
+
+  description = description.replace(/\s+/g, " ").trim();
+
   description =
     description.length > 0
-      ? capitalizeFirstLetter(remainingText)
+      ? capitalizeFirstLetter(description)
       : "Transaksi tidak teridentifikasi";
   console.log("🚀 ~ parseMessage ~ description:", description);
 

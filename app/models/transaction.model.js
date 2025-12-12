@@ -5,6 +5,7 @@ const { formatDate } = require("../utils/formatDate.js");
 
 const SPREADSHEET_ID = getSpreadSheetId();
 const HEADERS = ["Timestamp", "Description", "Amount", "Source", "Type"];
+const SUMMARY_RANGE_START = "G1";
 
 /**
  *
@@ -37,6 +38,7 @@ async function appendTransactionToSheet(transaction, sheetName) {
       valueInputOption: "USER_ENTERED",
       resource: resource,
     });
+    await updateSummary(sheets, SPREADSHEET_ID, sheetName);
     return result.data;
   } catch (error) {
     console.error("Error saat menulis ke Google Sheets", error.message);
@@ -85,6 +87,48 @@ async function ensureSheetExists(sheets, spreadsheetId, sheetName) {
   });
 
   console.log(`Sheet "${sheetName}" berhasil dibuat dengan header.`);
+}
+
+async function updateSummary(sheets, spreadsheetId, sheetName) {
+  const transaction = await sheets.spreadsheets.values.get({
+    spreadsheetId: spreadsheetId,
+    range: `${sheetName}!A2:E`,
+  });
+
+  const value = transaction.data.values || [];
+
+  let totalIncome = 0;
+  let totalExpense = 0;
+
+  value.forEach((row) => {
+    const type = row[4];
+    const amount = parseFloat(row[2]);
+
+    if (!isNaN(amount)) {
+      if (type === "Pendapatan") {
+        totalIncome += amount;
+      } else if (type === "Pengeluaran") {
+        totalExpense += amount;
+      }
+    }
+  });
+  const netBalance = totalIncome - totalExpense;
+
+  const summaryData = [
+    ["Bulan", sheetName],
+    ["Total Pendapatan", totalIncome],
+    ["Total Pengeluaran", totalExpense],
+    ["Surplus/Defisit", netBalance],
+  ];
+
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: spreadsheetId,
+    range: `${sheetName}!${SUMMARY_RANGE_START}`,
+    valueInputOption: "USER_ENTERED",
+    resource: {
+      values: summaryData,
+    },
+  });
 }
 
 module.exports = { appendTransactionToSheet };
